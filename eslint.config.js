@@ -13,6 +13,7 @@ export default defineConfig([
     extends: [
       js.configs.recommended,
       react.configs.flat.recommended,
+      react.configs.flat["jsx-runtime"],
       reactHooks.configs.flat.recommended,
       reactRefresh.configs.vite,
     ],
@@ -24,6 +25,9 @@ export default defineConfig([
       react: {
         version: "detect",
       },
+    },
+    rules: {
+      "react/prop-types": "off",
     },
   },
   eslintConfigPrettier,

@@ -1,5 +1,7 @@
 import { useState } from "react";
 
+import { supabase } from "./supabase.js";
+
 const initialFacts = [
   {
     id: 1,
@@ -34,34 +36,39 @@ const initialFacts = [
   },
 ];
 
-function Counter() {
-  // 1. Define state variable
-  const [count, setCount] = useState(0);
+// function Counter() {
+//   // 1. Define state variable
+//   const [count, setCount] = useState(0);
 
-  return (
-    <div>
-      <span style={{ fontSize: "40px" }}>{count}</span>
-      <button className="btn btn-large" onClick={() => setCount((c) => c + 1)}>
-        +1
-      </button>
-    </div>
-  );
-}
+//   return (
+//     <div>
+//       <span style={{ fontSize: "40px" }}>{count}</span>
+//       <button className="btn btn-large" onClick={() => setCount((c) => c + 1)}>
+//         +1
+//       </button>
+//     </div>
+//   );
+// }
 
 function App() {
+  console.log(supabase);
+
   // 1. Define state variable
   const [showForm, setShowForm] = useState(false);
+  const [facts, setFacts] = useState(initialFacts);
 
   return (
     <>
       <Header showForm={showForm} setShowForm={setShowForm} />
 
       {/* 2. use state variable */}
-      {showForm ? <NewFactForm /> : null}
+      {showForm ? (
+        <NewFactForm setFacts={setFacts} setShowForm={setShowForm} />
+      ) : null}
 
       <main className="main">
         <CategoryFilter />
-        <FactList />
+        <FactList facts={facts} />
       </main>
     </>
   );
@@ -99,15 +106,58 @@ const CATEGORIES = [
   { name: "news", color: "#8b5cf6" },
 ];
 
-function NewFactForm() {
+// Source - https://stackoverflow.com/a/43467144
+// Posted by Pavlo, modified by community. See post 'Timeline' for change history
+// Retrieved 2026-09-05, License - CC BY-SA 4.0
+
+function isValidHttpUrl(string) {
+  let url;
+
+  try {
+    url = new URL(string);
+  } catch {
+    return false;
+  }
+
+  return url.protocol === "http:" || url.protocol === "https:";
+}
+
+function NewFactForm({ setFacts, setShowForm }) {
   const [text, setText] = useState("");
-  const [source, setSource] = useState("");
+  const [source, setSource] = useState("http://example.com");
   const [category, setCategory] = useState("");
   const textLength = text.length;
 
   function handleSubmit(e) {
+    // prevent browser reload
     e.preventDefault();
     console.log(text, source, category);
+
+    // check if data is valid. If so, create a new fact
+    if (text && isValidHttpUrl(source) && category && textLength <= 200) {
+      // Create a new fact object
+      const newFact = {
+        id: Math.round(Math.random() * 100000000),
+        text,
+        source,
+        category,
+        votesInteresting: 0,
+        votesMindblowing: 0,
+        votesFalse: 0,
+        createdIn: new Date().getFullYear(),
+      };
+
+      // Add the new fact to the UI. Add the fact to state.
+      setFacts((facts) => [newFact, ...facts]);
+
+      // Reset input fields
+      setText("");
+      setSource("");
+      setCategory("");
+
+      // Close the form
+      setShowForm(false);
+    }
   }
 
   return (
@@ -160,9 +210,7 @@ function CategoryFilter({ fact }) {
   );
 }
 
-function FactList() {
-  const facts = initialFacts;
-
+function FactList({ facts }) {
   return (
     <section>
       <ul className="facts-list">
@@ -180,7 +228,12 @@ function Fact({ fact }) {
     <li className="fact">
       <p>
         {fact.text}
-        <a href={fact.source} target="_blank" className="source">
+        <a
+          href={fact.source}
+          target="_blank"
+          className="source"
+          rel="noreferrer"
+        >
           (Source)
         </a>
       </p>
